@@ -3,6 +3,7 @@ var stateMain = function() {
 	var _ = this;
 
 	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
+	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
 	var sticks = ["stick_metal", "stick_metal_outline", "stick_wood", "stick_wood_outline"];
 
 	var panggung;
@@ -63,6 +64,7 @@ var stateMain = function() {
 
 			group.damage += 10;
 			if (group.damage >= group.maxDamage) {
+				group.target.inputEnabled = false;
 				_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
 				_.add.tween(targetG.scale).to({ y: 0.1, x: 0.8 }, 500, Phaser.Easing.Cubic.In, true);
 			}
@@ -72,9 +74,19 @@ var stateMain = function() {
 	}
 
 	function manageTargets() {
-		insertTargetDuck();
-		insertTargetDuck();
-		insertTargetDuck();
+
+		var intervalSpeed = 4000;
+		function repeatInsert() {
+			var rand = Math.floor(Math.random() * 2);
+			if (rand == 0)
+				insertTargetDuck();
+			else
+				insertTargetBoard();
+			intervalSpeed--;
+			window.setTimeout(repeatInsert, intervalSpeed);
+		}
+		repeatInsert();
+		
 		function insertTargetDuck() {
 			var randomDuck = ducks[Math.floor(Math.random() * ducks.length)];
 			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
@@ -96,8 +108,31 @@ var stateMain = function() {
 				tw2.stop();
 				tw1 = undefined;
 				tw2 = undefined;
-				////target.destroy();
+				target.destroy();
 			}
+		}
+		function insertTargetBoard() {
+			var randomTarget = targetBoards[Math.floor(Math.random() * targetBoards.length)];
+			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
+
+			var target 		= createTarget( randomTarget, randomSticks );
+			target.x 		= Math.random() * game.width;
+			target.y 		= game.height + 150;
+
+			var yAxis		= 260 + (Math.random() * 40);
+
+			panggung.addAt(target, randomPanggungIndex());
+
+			_.add.tween(target).to({ y: yAxis}, 400, Phaser.Easing.Quadratic.Out, true).onComplete.add(onFinishUp);
+			function onFinishUp() {
+				window.setTimeout(function() {
+					_.add.tween(target).to({ y: game.height + 150}, 400, Phaser.Easing.Quadratic.In, true).onComplete.add(onFinishIdle);
+				}, 1000 + (Math.random() * 3000));
+			}
+			function onFinishIdle() {
+
+			}
+
 		}
 		function randomPanggungIndex() {	
 			var r = Math.floor(Math.random() * 3);

@@ -3,6 +3,8 @@ var rifle;
 var stateMain = function() {
 	var _ = this;
 
+	var score = 0;
+
 	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
 	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
 	var sticks = ["stick_metal", "stick_metal_outline", "stick_wood", "stick_wood_outline"];
@@ -10,7 +12,8 @@ var stateMain = function() {
 	var panggung;
 	var stall = {};
 	var crossHair;
-	
+
+	var scoreHUD;
 
 	function createGround() {
 		/*background*/
@@ -50,6 +53,12 @@ var stateMain = function() {
 		/* create rifle */
 		rifle = _.add.sprite(game.width, game.height + 150, "objects", "rifle");
 		rifle.anchor.set(1,1);
+
+		/* create HUD */
+		stall.duckIcon = _.add.sprite(20,20, "hud", "icon_duck");
+		scoreHUD = createNumberText("0", "_small");
+		scoreHUD.position.set(stall.duckIcon.x + stall.duckIcon.width + 10,22);
+		scoreHUD.scale.set(0.8,0.8);
 	}
 
 	function createTarget(_target, _stick) {
@@ -60,8 +69,6 @@ var stateMain = function() {
 
 		group.target.anchor.set(0.5,1);
 		group.stick.anchor.set(0.5,1); group.stick.y = group.stick.height;
-
-		tw = group.target;
 
 		group.maxDamage = 20;
 		group.damage = 0;
@@ -78,7 +85,60 @@ var stateMain = function() {
 				group.target.inputEnabled = false;
 				_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
 				_.add.tween(targetG.scale).to({ y: 0.1, x: 0.8 }, 500, Phaser.Easing.Cubic.In, true);
+
+				var center = {x: group.x, y: group.x - group.target.height / 2};
+				lgi(pointerDistance(game.input, center));
+
+				showShotScore(group.x, group.y - targetG.height, 10);
+				score += 10;
+				scoreHUD.changeText(score.toString());
 			}
+		}
+
+		return group;
+	}
+
+	function showShotScore(px, py, score) {
+		var txt = createNumberText("+" + score.toString(), "_small");
+		txt.x = px - txt.width/2;
+		txt.y = py;
+
+		_.add.tween(txt).to({ y: py-100, alpha: 0 }, 1000, Phaser.Easing.Quadratic.Out, true).onComplete.add(showComplete);
+		function showComplete() {
+			txt.destroy();
+		}
+	}
+
+	function createNumberText(str, endStr) {
+		endStr = endStr || "";
+		var group = _.add.group();
+
+		insertText(str);
+		function insertText(str) {
+			var offsetX = 0;
+			for (var i = 0; i < str.length; i++) {
+				if (str[i] == " ") {
+					offsetX += 10;
+				} else {
+					group.create(offsetX, 0, "hud", getFrameName(str[i], endStr));
+					offsetX += group.getChildAt(group.children.length-1).width;
+				}
+			}
+		}
+		function getFrameName(char, end) {
+			if (char == "+")
+				return "text_plus" + end;
+			else if (char == "x")
+				return "text_cross" + end;
+			else if (char == ":")
+				return "text_dots" + end;
+			else
+				return "text_" + char + end;
+		}
+
+		group.changeText = function(txt) {
+			group.removeAll();
+			insertText(txt);
 		}
 
 		return group;
@@ -96,7 +156,7 @@ var stateMain = function() {
 				insertTargetBoard();
 
 			if (timer.delay > 1000)
-			timer.delay -= 50;
+				timer.delay -= 50;
 		}
 		
 		function insertTargetDuck() {
@@ -165,6 +225,8 @@ var stateMain = function() {
 		game.onResume.add(onResume);
 		game.onFocus.add(onFocus);
 
+		game.input.onDown.add(onDown);
+
 		function onPause() {
 			lgi("PAUSE");
 		}
@@ -173,6 +235,32 @@ var stateMain = function() {
 		}
 		function onFocus() {
 			lgi("FOCUS");
+		}
+
+		function onDown() {
+			/* scale crossHair */
+			if (crossHair.tweenDown) {
+				crossHair.tweenDown.start();
+
+				if (!rifle.isShot)
+					_.add.tween(rifle).to({rotation: rifle.rotation + 0.1}, 400, Phaser.Easing.Cubic.Out, true).onComplete.add(shotComplete);
+			} else {
+				crossHair.tweenDown			= _.add.tween(crossHair.scale).to({x: 1.5, y: 1.5}, 200, Phaser.Easing.Cubic.Out, true);
+				crossHair.tweenDownFinish	= _.add.tween(crossHair.scale).to({x: 1, y: 1}, 200, Phaser.Easing.Cubic.In, false);
+				crossHair.tweenDown.onComplete.add(scaleComplete);
+				crossHair.tweenDownFinish;
+
+				_.add.tween(rifle).to({rotation: rifle.rotation + 0.1}, 400, Phaser.Easing.Cubic.Out, true).onComplete.add(shotComplete);
+			}
+
+			rifle.isShot = true;
+
+			function scaleComplete() {
+				crossHair.tweenDownFinish.start();
+			}
+			function shotComplete() {
+				rifle.isShot = false;
+			}
 		}
 	}
 
@@ -193,7 +281,8 @@ var stateMain = function() {
 	this.update = function() {
 		crossHair.position.set(game.input.x, game.input.y);
 		rifle.x = game.input.x + 220;
-		rifle.rotation = 0.2 - game.input.y / (game.height - 115) * 0.4;
+		if (!rifle.isShot)
+			rifle.rotation = 0.2 - game.input.y / (game.height - 115) * 0.4;
 	}
 	this.render = function() {
 

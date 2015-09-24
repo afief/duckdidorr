@@ -1,4 +1,5 @@
 var tw;
+var rifle;
 var stateMain = function() {
 	var _ = this;
 
@@ -8,6 +9,8 @@ var stateMain = function() {
 
 	var panggung;
 	var stall = {};
+	var crossHair;
+	
 
 	function createGround() {
 		/*background*/
@@ -39,6 +42,14 @@ var stateMain = function() {
 
 		_.add.tween(panggung.grass1).to({ x: 0 }, 4000, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 		_.add.tween(panggung.grass2).to({ x: 0 }, 2500, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
+
+		/* create crosshair */
+		crossHair = _.add.sprite(0,0, "hud", "crosshair_blue_large");
+		crossHair.anchor.set(0.5,0.5);
+
+		/* create rifle */
+		rifle = _.add.sprite(game.width, game.height + 150, "objects", "rifle");
+		rifle.anchor.set(1,1);
 	}
 
 	function createTarget(_target, _stick) {
@@ -75,17 +86,18 @@ var stateMain = function() {
 
 	function manageTargets() {
 
-		var intervalSpeed = 4000;
+		var timer = _.time.events.add(Phaser.Timer.SECOND * 4, repeatInsert, this);
+		timer.loop = true;
 		function repeatInsert() {
 			var rand = Math.floor(Math.random() * 2);
 			if (rand == 0)
 				insertTargetDuck();
 			else
 				insertTargetBoard();
-			intervalSpeed--;
-			window.setTimeout(repeatInsert, intervalSpeed);
+
+			if (timer.delay > 1000)
+			timer.delay -= 50;
 		}
-		repeatInsert();
 		
 		function insertTargetDuck() {
 			var randomDuck = ducks[Math.floor(Math.random() * ducks.length)];
@@ -112,7 +124,8 @@ var stateMain = function() {
 			}
 		}
 		function insertTargetBoard() {
-			var randomTarget = targetBoards[Math.floor(Math.random() * targetBoards.length)];
+			var boardsDucks = ducks.concat(targetBoards);
+			var randomTarget = boardsDucks[Math.floor(Math.random() * boardsDucks.length)];
 			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
 
 			var target 		= createTarget( randomTarget, randomSticks );
@@ -125,12 +138,14 @@ var stateMain = function() {
 
 			_.add.tween(target).to({ y: yAxis}, 400, Phaser.Easing.Quadratic.Out, true).onComplete.add(onFinishUp);
 			function onFinishUp() {
-				window.setTimeout(function() {
-					_.add.tween(target).to({ y: game.height + 150}, 400, Phaser.Easing.Quadratic.In, true).onComplete.add(onFinishIdle);
-				}, 1000 + (Math.random() * 3000));
+				_.time.events.add(Phaser.Timer.SECOND + (Math.random() * 3000), onIdle, this);
+			}
+			function onIdle() {
+				_.add.tween(target).to({ y: game.height + 150}, 400, Phaser.Easing.Quadratic.In, true).onComplete.add(onFinishIdle);
+				_.time.events.remove(onIdle);
 			}
 			function onFinishIdle() {
-
+				target.destroy();
 			}
 
 		}
@@ -145,10 +160,27 @@ var stateMain = function() {
 		}
 	}
 
+	function manageEvents() {
+		game.onPause.add(onPause);
+		game.onResume.add(onResume);
+		game.onFocus.add(onFocus);
+
+		function onPause() {
+			lgi("PAUSE");
+		}
+		function onResume() {
+			lgi("RESUME");	
+		}
+		function onFocus() {
+			lgi("FOCUS");
+		}
+	}
+
 	this.preload = function() {
 		lgi("MAIN PRELOAD");
 		_.load.atlasXML('stall', 'assets/spritesheet_stall.png', 'assets/spritesheet_stall.xml');
 		_.load.atlasXML('objects', 'assets/spritesheet_objects.png', 'assets/spritesheet_objects.xml');
+		_.load.atlasXML('hud', 'assets/spritesheet_hud.png', 'assets/spritesheet_hud.xml');
 
 		_.load.image("stand", "assets/stand.png");
 	}
@@ -156,10 +188,14 @@ var stateMain = function() {
 		lgi("MAIN CREATE");
 		createGround();
 		manageTargets();
+		manageEvents();
 	}
 	this.update = function() {
+		crossHair.position.set(game.input.x, game.input.y);
+		rifle.x = game.input.x + 220;
+		rifle.rotation = 0.2 - game.input.y / (game.height - 115) * 0.4;
 	}
 	this.render = function() {
-		
+
 	}
 }

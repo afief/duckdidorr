@@ -8,7 +8,7 @@ var stateMain = function() {
 	var duckPoin = 0;
 	var targetPoin = 0;
 	var reloadScrollCount = 3;
-	var totalBullets = 50;
+	var totalBullets = 200;
 
 	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
 	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
@@ -67,10 +67,10 @@ var stateMain = function() {
 
 		/* create HUD */
 		scoreHUD = _.add.group();
-		scoreHUD.coinIcon = _.add.sprite(20,15, "coin_gold");
+
+		scoreHUD.coinIcon = _.add.sprite(70,15, "coin_gold");
 		scoreHUD.coinIcon.scale.set(0.6,0.6);
 		scoreHUD.add(scoreHUD.coinIcon);
-
 		scoreHUD.score = createNumberText("0", "_small");
 		scoreHUD.score.position.set(scoreHUD.coinIcon.x + scoreHUD.coinIcon.width + 10, 20);
 		scoreHUD.score.scale.set(0.8,0.8);
@@ -78,7 +78,6 @@ var stateMain = function() {
 
 		scoreHUD.iconDuck = _.add.sprite(600, 20, "hud", "icon_duck");
 		scoreHUD.add(scoreHUD.iconDuck);
-
 		scoreHUD.duckPoin = createNumberText("0", "_small");
 		scoreHUD.duckPoin.position.set(scoreHUD.iconDuck.x + scoreHUD.iconDuck.width + 10, 22);
 		scoreHUD.duckPoin.scale.set(0.8,0.8);
@@ -86,11 +85,24 @@ var stateMain = function() {
 
 		scoreHUD.iconTarget = _.add.sprite(700, 20, "hud", "icon_target");
 		scoreHUD.add(scoreHUD.iconTarget);
-
 		scoreHUD.targetPoin = createNumberText("0", "_small");
 		scoreHUD.targetPoin.position.set(scoreHUD.iconTarget.x + scoreHUD.iconTarget.width + 10, 22);
 		scoreHUD.targetPoin.scale.set(0.8,0.8);
-		scoreHUD.add(scoreHUD.targetPoin);
+		scoreHUD.add(scoreHUD.targetPoin);		
+
+		/* fullscreen icon */
+		var fullscreenIcon = _.add.image(10, 10, "fullscreen-icon");
+		fullscreenIcon.scale.set(0.9,0.9);
+
+		fullscreenIcon.inputEnabled = true;
+		fullscreenIcon.events.onInputDown.add(function() {
+			if (game.scale.isFullScreen) {
+				game.scale.stopFullScreen();
+			}
+			else {
+				game.scale.startFullScreen(false);
+			}
+		}, this);
 	}
 
 	function createTarget(_target, _stick) {
@@ -115,7 +127,7 @@ var stateMain = function() {
 				shot.anchor.set(0.5,0.5);
 
 				/* calculate score based on distance of shot */
-				var center = {x: group.x, y: group.y - group.target.height / 2};
+				var center = {x: group.x, y: group.y - group.target.height / 2}; if (ducks.indexOf(_target) >= 0) center.y += group.target.height / 4;
 				var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 5);
 				distanceScore = (distanceScore < 0) ? 0 : distanceScore;
 
@@ -221,6 +233,7 @@ var stateMain = function() {
 		repeatInsert();
 		
 		function insertTargetDuck() {
+			var isInvert = Math.floor(Math.random() * 2);
 			var randomDuck = ducks[Math.floor(Math.random() * ducks.length)];
 			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
 
@@ -230,11 +243,18 @@ var stateMain = function() {
 			var speed 		= 5000 + (Math.random() * 5000);
 			var speedUpDown	= 1000 + (Math.random() * 3000);			
 
-			target.x = -100;
 			target.y = yAxis;
+			target.x = -100;
+			var targetX = game.width + 100;
+			if (isInvert) {
+				target.x = game.width + 100;
+				targetX = -100;
+				target.target.scale.x = -1;
+			}
+
 			panggung.addAt(target, randomPanggungIndex());
 
-			var tw1 = _.add.tween(target).to({ x: game.width + 100 }, speed, Phaser.Easing.Linear.None, true).onComplete.add(onTargetFinished);
+			var tw1 = _.add.tween(target).to({ x: targetX }, speed, Phaser.Easing.Linear.None, true).onComplete.add(onTargetFinished);
 			var tw2 = _.add.tween(target).to({ y: yJump }, speedUpDown, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 			function onTargetFinished() {
 				lgi("Finished");
@@ -366,7 +386,8 @@ var stateMain = function() {
 		}
 
 		bullets.shot = function() {
-			if (bullets.num > 0) {
+			/* if target on top of dashboard */
+			if ((bullets.num > 0) && (game.input.y < stall.dashboard.y) && (game.input.y > 60)) {
 				bullets.larik[bullets.num-1].frameName = "icon_bullet_empty_" + bullets.long;
 				bullets.num--;
 
@@ -397,7 +418,7 @@ var stateMain = function() {
 		/* Hit Area to Click Reload */
 		bullets.hitArea = new Phaser.Graphics(_);
 		bullets.hitArea.beginFill(0x000000,0);
-		bullets.hitArea.drawRect(0,0,bullets.width, bullets.height);
+		bullets.hitArea.drawRect(-20,-20,bullets.width + 40, bullets.height + 40);
 		bullets.hitArea.endFill();
 		bullets.add(bullets.hitArea);
 
@@ -443,12 +464,14 @@ var stateMain = function() {
 
 		_.load.image("stand", "assets/stand.png");
 		_.load.image("coin_gold", "assets/coin_gold.png");
+		_.load.image("fullscreen-icon", "assets/fullscreen-icon.png");
 
 		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
 		_.load.audio("reload", "assets/sounds/reload.mp3");
 		_.load.audio("coin", "assets/sounds/coin1.wav");
 		_.load.audio("coin2", "assets/sounds/coin2.wav");
 
+		game.scale.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
 		game.canvas.oncontextmenu = function (e) { 
 			e.preventDefault();
 		}
@@ -465,10 +488,12 @@ var stateMain = function() {
 		showCountDown();
 	}
 	this.update = function() {
-		crossHair.position.set(game.input.x, game.input.y);
-		rifle.x = game.input.x + 220;
-		if (!rifle.isShot)
-			rifle.rotation = 0.2 - game.input.y / (game.height - 115) * 0.4;
+		if ((game.input.y < stall.dashboard.y) && (game.input.y > 60)) {
+			crossHair.position.set(game.input.x, game.input.y);
+			rifle.x = game.input.x + 220;
+			if (!rifle.isShot)
+				rifle.rotation = 0.2 - game.input.y / (game.height - 115) * 0.4;
+		}
 	}
 	this.render = function() {
 

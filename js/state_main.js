@@ -218,6 +218,7 @@ var stateMain = function() {
 			if (timer.delay > 1000)
 				timer.delay -= 50;
 		}
+		repeatInsert();
 		
 		function insertTargetDuck() {
 			var randomDuck = ducks[Math.floor(Math.random() * ducks.length)];
@@ -407,6 +408,33 @@ var stateMain = function() {
 		}
 	}
 
+	function showCountDown() {
+		var arText = ["ready", "3", "2", "1", "go"];
+		var countDown = false;
+		function loopCountDown() {
+			if (countDown !== false) {
+				countDown.destroy();
+			}
+
+			if (arText.length > 0) {
+				/* show countdown text */
+				countDown = createNumberText([arText[0]]);
+
+				countDown.x = game.width / 2;
+				countDown.y = game.height / 2;
+				countDown.getAt(0).anchor.set(0.5,0.5);
+				countDown.getAt(0).position.set(0,0);
+
+				arText.splice(0,1);
+				_.add.tween(countDown.getAt(0).scale).to({x: 2, y: 2}, 400, Phaser.Easing.Quadratic.Out, true, 0, 0, true).onComplete.add(loopCountDown);
+			} else {
+				/* start show targets */
+				manageTargets();
+			}
+		}
+		loopCountDown();
+	}
+
 	this.preload = function() {
 		lgi("MAIN PRELOAD");
 		_.load.atlasXML('stall', 'assets/spritesheet_stall.png', 'assets/spritesheet_stall.xml');
@@ -429,11 +457,12 @@ var stateMain = function() {
 	this.create = function() {
 		lgi("MAIN CREATE");
 		createGround();
-		manageTargets();
 		manageEvents();
 		manageSounds();
 
 		manageBullets();
+
+		showCountDown();
 	}
 	this.update = function() {
 		crossHair.position.set(game.input.x, game.input.y);

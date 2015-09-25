@@ -1,11 +1,14 @@
+"use strict";
+
 var tw;
-var rifle;
 var stateMain = function() {
 	var _ = this;
 
 	var score = 0;
 	var duckPoin = 0;
 	var targetPoin = 0;
+	var reloadScrollCount = 3;
+	var totalBullets = 50;
 
 	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
 	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
@@ -16,10 +19,15 @@ var stateMain = function() {
 	var crossHair;
 
 	var scoreHUD;
+	var rifle;
+	var bullets;
+	
 
 	function createGround() {
-		/*background*/
+		/* background */
 		stall.bg = _.add.tileSprite(0,0, game.width, game.height, "stall", "bg_wood");
+		stall.bggroup = _.add.group();
+		stall.bggroup.add(stall.bg);
 
 		panggung = _.add.group();
 
@@ -93,36 +101,43 @@ var stateMain = function() {
 		group.target.anchor.set(0.5,1);
 		group.stick.anchor.set(0.5,1); group.stick.y = group.stick.height;
 
-		group.maxDamage = 1 + Math.floor(Math.random() * 5);
+		group.maxDamage = 2 + Math.floor(Math.random() * 4); // how many shot to do to make this target fall
 		group.damage = 0;
 		group.target.inputEnabled = true;
 		group.target.input.pixelPerfectClick = true;
 
 		group.target.events.onInputDown.add(getShot);
 		function getShot(currentTarget, pointer) {
-			var shot = targetG.create(pointer.position.x - group.x, pointer.position.y - group.y, "objects", "shot_blue_small");
-			shot.anchor.set(0.5,0.5);
+			if (bullets.shot()) {
+				/* bekas tembakan */
+				var shot = targetG.create(pointer.position.x - group.x, pointer.position.y - group.y, "objects", "shot_blue_small");
+				shot.anchor.set(0.5,0.5);
 
-			var center = {x: group.x, y: group.y - group.target.height / 2};
-			var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 10);
-			distanceScore = (distanceScore < 0) ? 0 : distanceScore;
+				/* calculate score based on distance of shot */
+				var center = {x: group.x, y: group.y - group.target.height / 2};
+				var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 10);
+				distanceScore = (distanceScore < 0) ? 0 : distanceScore;
 
-			showShotScore(group.x, group.y - targetG.height, distanceScore);
-			score += distanceScore;
-			scoreHUD.score.changeText(score.toString());
+				/* show shot score */
+				showShotScore(group.x, group.y - targetG.height, distanceScore);
+				score += distanceScore;
+				scoreHUD.score.changeText(score.toString());
 
-			group.damage += 1;
-			if (group.damage >= group.maxDamage) {
-				group.target.inputEnabled = false;
-				_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
-				_.add.tween(targetG.scale).to({ y: 0.4, x: 0.8 }, 500, Phaser.Easing.Cubic.InOut, true);
+				group.damage += 1;
 
-				if (ducks.indexOf(_target) >= 0) {
-					duckPoin += 1;
-					scoreHUD.duckPoin.changeText(duckPoin.toString());
-				} else {
-					targetPoin += 1;
-					scoreHUD.targetPoin.changeText(targetPoin.toString());
+				/* if damage reached the max */
+				if (group.damage >= group.maxDamage) {
+					group.target.inputEnabled = false;
+					_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
+					_.add.tween(targetG.scale).to({ y: 0.4, x: 0.8 }, 500, Phaser.Easing.Cubic.InOut, true);
+
+					if (ducks.indexOf(_target) >= 0) {
+						duckPoin += 1;
+						scoreHUD.duckPoin.changeText(duckPoin.toString());
+					} else {
+						targetPoin += 1;
+						scoreHUD.targetPoin.changeText(targetPoin.toString());
+					}
 				}
 			}
 		}
@@ -257,35 +272,42 @@ var stateMain = function() {
 		game.onResume.add(onResume);
 		game.onFocus.add(onFocus);
 
-		game.input.onDown.add(onDown);
-
 		function onPause() {
-			lgi("PAUSE");
+			//lgi("PAUSE");
 		}
 		function onResume() {
-			lgi("RESUME");	
+			//lgi("RESUME");	
 		}
 		function onFocus() {
-			lgi("FOCUS");
+			//lgi("FOCUS");
 		}
 
-		function onDown() {
-			/* scale crossHair */
-			if (crossHair.tweenDown) {
-				crossHair.tweenDown.start();
+		/* shot on background (miss shot) */
+		stall.bg.inputEnabled = true;
+		stall.bg.events.onInputDown.add(onDown);
+		function onDown(currentTarget, pointer) {
+			if (bullets.shot()) {
+				/* scale crossHair */
+				if (crossHair.tweenDown) {
+					crossHair.tweenDown.start();
 
-				if (!rifle.isShot)
+					if (!rifle.isShot)
+						_.add.tween(rifle).to({rotation: rifle.rotation + 0.1}, 400, Phaser.Easing.Cubic.Out, true).onComplete.add(shotComplete);
+				} else {
+					crossHair.tweenDown			= _.add.tween(crossHair.scale).to({x: 1.5, y: 1.5}, 200, Phaser.Easing.Cubic.Out, true);
+					crossHair.tweenDownFinish	= _.add.tween(crossHair.scale).to({x: 1, y: 1}, 200, Phaser.Easing.Cubic.In, false);
+					crossHair.tweenDown.onComplete.add(scaleComplete);
+					crossHair.tweenDownFinish;
+
 					_.add.tween(rifle).to({rotation: rifle.rotation + 0.1}, 400, Phaser.Easing.Cubic.Out, true).onComplete.add(shotComplete);
-			} else {
-				crossHair.tweenDown			= _.add.tween(crossHair.scale).to({x: 1.5, y: 1.5}, 200, Phaser.Easing.Cubic.Out, true);
-				crossHair.tweenDownFinish	= _.add.tween(crossHair.scale).to({x: 1, y: 1}, 200, Phaser.Easing.Cubic.In, false);
-				crossHair.tweenDown.onComplete.add(scaleComplete);
-				crossHair.tweenDownFinish;
+				}
+				/* bekas tembakan di tembok */
+				var shot = stall.bggroup.create(pointer.position.x - stall.bg.x, pointer.position.y - stall.bg.y, "objects", "shot_blue_small");
+				shot.anchor.set(0.5,0.5);
+				shot.alpha = 0.5;
 
-				_.add.tween(rifle).to({rotation: rifle.rotation + 0.1}, 400, Phaser.Easing.Cubic.Out, true).onComplete.add(shotComplete);
+				rifle.isShot = true;
 			}
-
-			rifle.isShot = true;
 
 			function scaleComplete() {
 				crossHair.tweenDownFinish.start();
@@ -294,6 +316,66 @@ var stateMain = function() {
 				rifle.isShot = false;
 			}
 		}
+
+		/* scroll to reload */
+		game.input.mouse.mouseWheelCallback = mouseWheel;
+		var dcount = 0;
+		function mouseWheel(event) {
+			if (game.input.mouse.wheelDelta == Phaser.Mouse.WHEEL_DOWN) {
+				dcount += Math.abs(game.input.mouse.wheelDelta);
+				if (dcount >= reloadScrollCount) {
+					lgi("RELOAD");
+					bullets.reload();
+					dcount = 0;
+				}
+			}
+		}
+	}	
+	function manageBullets() {
+		bullets = _.add.group();
+		bullets.max = 5;
+		bullets.num = 5;
+		bullets.type = "silver";
+		bullets.long = "short";
+
+		bullets.number = createNumberText(totalBullets.toString(), "_small");
+		bullets.add(bullets.number);
+
+		bullets.larik = [];
+
+		var posX = bullets.number.width + 10;
+		for (var i = 0; i < bullets.num; i++) {
+			bullets.larik.push(bullets.create(posX, 0, "hud", "icon_bullet_" + bullets.type + "_" + bullets.long));
+			posX += 25;
+		}
+
+		bullets.shot = function() {
+			if (bullets.num > 0) {
+				bullets.larik[bullets.num-1].frameName = "icon_bullet_empty_" + bullets.long;
+				bullets.num--;
+
+				return true;
+			}
+			return false;
+		}
+		bullets.reload = function() {
+			if (bullets.num < bullets.max) {
+				bullets.num += 1;
+				bullets.larik[bullets.num-1].frameName = "icon_bullet_" + bullets.type + "_" + bullets.long;
+
+				/* decreate total bullets */
+				if (totalBullets > 0) {
+					totalBullets--;
+					bullets.number.changeText(totalBullets.toString());
+				}
+			}
+		}
+
+		function setPosition() {
+			bullets.x = game.width - bullets.width - 10;
+			bullets.y = game.height - bullets.height - 10;
+		}
+		setPosition();
 	}
 
 	this.preload = function() {
@@ -304,12 +386,18 @@ var stateMain = function() {
 
 		_.load.image("stand", "assets/stand.png");
 		_.load.image("coin_gold", "assets/coin_gold.png");
+
+		game.canvas.oncontextmenu = function (e) { 
+			e.preventDefault();
+		}
+
 	}
 	this.create = function() {
 		lgi("MAIN CREATE");
 		createGround();
 		manageTargets();
 		manageEvents();
+		manageBullets();
 	}
 	this.update = function() {
 		crossHair.position.set(game.input.x, game.input.y);

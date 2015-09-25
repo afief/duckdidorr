@@ -70,7 +70,7 @@ var stateMain = function() {
 		group.target.anchor.set(0.5,1);
 		group.stick.anchor.set(0.5,1); group.stick.y = group.stick.height;
 
-		group.maxDamage = 20;
+		group.maxDamage = 1 + Math.floor(Math.random() * 5);
 		group.damage = 0;
 		group.target.inputEnabled = true;
 		group.target.input.pixelPerfectClick = true;
@@ -80,18 +80,19 @@ var stateMain = function() {
 			var shot = targetG.create(pointer.position.x - group.x, pointer.position.y - group.y, "objects", "shot_blue_small");
 			shot.anchor.set(0.5,0.5);
 
-			group.damage += 10;
+			var center = {x: group.x, y: group.y - group.target.height / 2};
+			var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 10);
+			distanceScore = (distanceScore < 0) ? 0 : distanceScore;
+
+			showShotScore(group.x, group.y - targetG.height, distanceScore);
+			score += distanceScore;
+			scoreHUD.changeText(score.toString());
+
+			group.damage += 1;
 			if (group.damage >= group.maxDamage) {
 				group.target.inputEnabled = false;
 				_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
-				_.add.tween(targetG.scale).to({ y: 0.1, x: 0.8 }, 500, Phaser.Easing.Cubic.In, true);
-
-				var center = {x: group.x, y: group.x - group.target.height / 2};
-				lgi(pointerDistance(game.input, center));
-
-				showShotScore(group.x, group.y - targetG.height, 10);
-				score += 10;
-				scoreHUD.changeText(score.toString());
+				_.add.tween(targetG.scale).to({ y: 0.4, x: 0.8 }, 500, Phaser.Easing.Cubic.InOut, true);
 			}
 		}
 
@@ -189,7 +190,7 @@ var stateMain = function() {
 			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
 
 			var target 		= createTarget( randomTarget, randomSticks );
-			target.x 		= Math.random() * game.width;
+			target.x 		= 100 + (Math.random() * (game.width - 200));
 			target.y 		= game.height + 150;
 
 			var yAxis		= 260 + (Math.random() * 40);

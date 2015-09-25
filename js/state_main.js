@@ -22,6 +22,7 @@ var stateMain = function() {
 	var rifle;
 	var bullets;
 	
+	var sounds = {};
 
 	function createGround() {
 		/* background */
@@ -124,6 +125,7 @@ var stateMain = function() {
 				scoreHUD.score.changeText(score.toString());
 
 				group.damage += 1;
+				sounds.shot.play();
 
 				/* if damage reached the max */
 				if (group.damage >= group.maxDamage) {
@@ -138,6 +140,10 @@ var stateMain = function() {
 						targetPoin += 1;
 						scoreHUD.targetPoin.changeText(targetPoin.toString());
 					}
+
+					sounds.coin2.play();
+				} else {
+					sounds.coin.play();
 				}
 			}
 		}
@@ -189,6 +195,13 @@ var stateMain = function() {
 		}
 
 		return group;
+	}
+
+	function manageSounds() {
+		sounds.shot = _.add.audio("shot");
+		sounds.reload = _.add.audio("reload");
+		sounds.coin = _.add.audio("coin");
+		sounds.coin2 = _.add.audio("coin2");
 	}
 
 	function manageTargets() {
@@ -306,6 +319,8 @@ var stateMain = function() {
 				shot.anchor.set(0.5,0.5);
 				shot.alpha = 0.5;
 
+				sounds.shot.play();
+
 				rifle.isShot = true;
 			}
 
@@ -362,6 +377,7 @@ var stateMain = function() {
 			if (bullets.num < bullets.max) {
 				bullets.num += 1;
 				bullets.larik[bullets.num-1].frameName = "icon_bullet_" + bullets.type + "_" + bullets.long;
+				sounds.reload.play();
 
 				/* decreate total bullets */
 				if (totalBullets > 0) {
@@ -376,6 +392,19 @@ var stateMain = function() {
 			bullets.y = game.height - bullets.height - 10;
 		}
 		setPosition();
+
+		/* Hit Area to Click Reload */
+		bullets.hitArea = new Phaser.Graphics(_);
+		bullets.hitArea.beginFill(0x000000,0);
+		bullets.hitArea.drawRect(0,0,bullets.width, bullets.height);
+		bullets.hitArea.endFill();
+		bullets.add(bullets.hitArea);
+
+		bullets.hitArea.inputEnabled = true;
+		bullets.hitArea.events.onInputDown.add(reloadBullets);
+		function reloadBullets() {
+			bullets.reload();
+		}
 	}
 
 	this.preload = function() {
@@ -387,6 +416,11 @@ var stateMain = function() {
 		_.load.image("stand", "assets/stand.png");
 		_.load.image("coin_gold", "assets/coin_gold.png");
 
+		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
+		_.load.audio("reload", "assets/sounds/reload.mp3");
+		_.load.audio("coin", "assets/sounds/coin1.wav");
+		_.load.audio("coin2", "assets/sounds/coin2.wav");
+
 		game.canvas.oncontextmenu = function (e) { 
 			e.preventDefault();
 		}
@@ -397,6 +431,8 @@ var stateMain = function() {
 		createGround();
 		manageTargets();
 		manageEvents();
+		manageSounds();
+
 		manageBullets();
 	}
 	this.update = function() {

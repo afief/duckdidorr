@@ -102,7 +102,7 @@ var stateMain = function() {
 		group.target.anchor.set(0.5,1);
 		group.stick.anchor.set(0.5,1); group.stick.y = group.stick.height;
 
-		group.maxDamage = 2 + Math.floor(Math.random() * 4); // how many shot to do to make this target fall
+		group.maxDamage = 3;//2 + Math.floor(Math.random() * 4); // how many shot to do to make this target fall
 		group.damage = 0;
 		group.target.inputEnabled = true;
 		group.target.input.pixelPerfectClick = true;
@@ -116,7 +116,7 @@ var stateMain = function() {
 
 				/* calculate score based on distance of shot */
 				var center = {x: group.x, y: group.y - group.target.height / 2};
-				var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 10);
+				var distanceScore = 10 - Math.floor(pointerDistance(center, game.input) / 5);
 				distanceScore = (distanceScore < 0) ? 0 : distanceScore;
 
 				/* show shot score */
@@ -206,7 +206,7 @@ var stateMain = function() {
 
 	function manageTargets() {
 
-		var timer = _.time.events.add(Phaser.Timer.SECOND * 4, repeatInsert, this);
+		var timer = _.time.events.add(Phaser.Timer.SECOND * 3, repeatInsert, this);
 		timer.loop = true;
 		function repeatInsert() {
 			var rand = Math.floor(Math.random() * 2);
@@ -374,7 +374,7 @@ var stateMain = function() {
 			return false;
 		}
 		bullets.reload = function() {
-			if (bullets.num < bullets.max) {
+			if ((bullets.num < bullets.max) && (totalBullets > 0)) {
 				bullets.num += 1;
 				bullets.larik[bullets.num-1].frameName = "icon_bullet_" + bullets.type + "_" + bullets.long;
 				sounds.reload.play();

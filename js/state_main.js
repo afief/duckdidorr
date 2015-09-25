@@ -4,6 +4,8 @@ var stateMain = function() {
 	var _ = this;
 
 	var score = 0;
+	var duckPoin = 0;
+	var targetPoin = 0;
 
 	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
 	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
@@ -55,10 +57,31 @@ var stateMain = function() {
 		rifle.anchor.set(1,1);
 
 		/* create HUD */
-		stall.duckIcon = _.add.sprite(20,20, "hud", "icon_duck");
-		scoreHUD = createNumberText("0", "_small");
-		scoreHUD.position.set(stall.duckIcon.x + stall.duckIcon.width + 10,22);
-		scoreHUD.scale.set(0.8,0.8);
+		scoreHUD = _.add.group();
+		scoreHUD.coinIcon = _.add.sprite(20,15, "coin_gold");
+		scoreHUD.coinIcon.scale.set(0.6,0.6);
+		scoreHUD.add(scoreHUD.coinIcon);
+
+		scoreHUD.score = createNumberText("0", "_small");
+		scoreHUD.score.position.set(scoreHUD.coinIcon.x + scoreHUD.coinIcon.width + 10, 20);
+		scoreHUD.score.scale.set(0.8,0.8);
+		scoreHUD.add(scoreHUD.score);
+
+		scoreHUD.iconDuck = _.add.sprite(600, 20, "hud", "icon_duck");
+		scoreHUD.add(scoreHUD.iconDuck);
+
+		scoreHUD.duckPoin = createNumberText("0", "_small");
+		scoreHUD.duckPoin.position.set(scoreHUD.iconDuck.x + scoreHUD.iconDuck.width + 10, 22);
+		scoreHUD.duckPoin.scale.set(0.8,0.8);
+		scoreHUD.add(scoreHUD.duckPoin);
+
+		scoreHUD.iconTarget = _.add.sprite(700, 20, "hud", "icon_target");
+		scoreHUD.add(scoreHUD.iconTarget);
+
+		scoreHUD.targetPoin = createNumberText("0", "_small");
+		scoreHUD.targetPoin.position.set(scoreHUD.iconTarget.x + scoreHUD.iconTarget.width + 10, 22);
+		scoreHUD.targetPoin.scale.set(0.8,0.8);
+		scoreHUD.add(scoreHUD.targetPoin);
 	}
 
 	function createTarget(_target, _stick) {
@@ -86,13 +109,21 @@ var stateMain = function() {
 
 			showShotScore(group.x, group.y - targetG.height, distanceScore);
 			score += distanceScore;
-			scoreHUD.changeText(score.toString());
+			scoreHUD.score.changeText(score.toString());
 
 			group.damage += 1;
 			if (group.damage >= group.maxDamage) {
 				group.target.inputEnabled = false;
 				_.add.tween(targetG).to({ y: game.height }, 800, Phaser.Easing.Cubic.In, true);
 				_.add.tween(targetG.scale).to({ y: 0.4, x: 0.8 }, 500, Phaser.Easing.Cubic.InOut, true);
+
+				if (ducks.indexOf(_target) >= 0) {
+					duckPoin += 1;
+					scoreHUD.duckPoin.changeText(duckPoin.toString());
+				} else {
+					targetPoin += 1;
+					scoreHUD.targetPoin.changeText(targetPoin.toString());
+				}
 			}
 		}
 
@@ -272,6 +303,7 @@ var stateMain = function() {
 		_.load.atlasXML('hud', 'assets/spritesheet_hud.png', 'assets/spritesheet_hud.xml');
 
 		_.load.image("stand", "assets/stand.png");
+		_.load.image("coin_gold", "assets/coin_gold.png");
 	}
 	this.create = function() {
 		lgi("MAIN CREATE");

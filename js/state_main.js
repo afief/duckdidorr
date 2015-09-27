@@ -522,7 +522,7 @@ var stateMain = function() {
 				countDown.getAt(0).position.set(0,0);
 
 				arText.splice(0,1);
-				_.add.tween(countDown.getAt(0).scale).to({x: 2, y: 2}, 400, Phaser.Easing.Quadratic.Out, true, 0, 0, true).onComplete.add(loopCountDown);
+				_.add.tween(countDown.getAt(0).scale).to({x: 2, y: 2}, 500, Phaser.Easing.Quadratic.Out, true, 0, 0, true).onComplete.add(loopCountDown);
 			} else {
 				/* start show targets */
 				manageTargets();

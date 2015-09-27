@@ -8,7 +8,7 @@ var stateMain = function() {
 	var duckPoin = 0;
 	var targetPoin = 0;
 	var reloadScrollCount = 3;
-	var totalBullets = 100;
+	var totalBullets = 10;
 	var isGameOver = false;
 	var startShowSpeed = Phaser.Timer.SECOND * 3;
 
@@ -26,6 +26,9 @@ var stateMain = function() {
 	var timer;
 	
 	var sounds = {};
+	var themes = [{bg: "bg_wood", b1: "grass1", b2: "grass2"}, {bg: "bg_blue", b1: "water1", b2: "water2"}];
+	var themeIndex = Math.floor(Math.random() * themes.length);
+	var theme = themes[themeIndex];
 
 	function reset() {
 		score = 0;
@@ -59,12 +62,22 @@ var stateMain = function() {
 				stall.bggroup.getChildAt(i).destroy();
 				i--;
 			}
+
+			//ganti tema
+			themeIndex += 1;
+			if (themeIndex >= themes.length) themeIndex = 0;
+			theme = themes[themeIndex];
+			lgi(theme);
+
+			stall.bg.frameName = theme.bg;
+			panggung.grass1.frameName = theme.b1;
+			panggung.grass2.frameName = theme.b2;
 		}
 	}
 
 	function createGround() {
 		/* background */
-		stall.bg = _.add.tileSprite(0,0, game.width, game.height, "stall", "bg_wood");
+		stall.bg = _.add.tileSprite(0,0, game.width, game.height, "stall", theme.bg);
 		stall.bggroup = _.add.group();
 		stall.bggroup.add(stall.bg);
 
@@ -84,9 +97,9 @@ var stateMain = function() {
 		stall.curtainStraight = _.add.tileSprite(0, 0, game.width, 80, "stall", "curtain_straight");
 		
 		/* atur panggung */
-		panggung.grass1 = new Phaser.TileSprite(_, -150, game.height, game.width + 150, 200, "stall", "grass1");
+		panggung.grass1 = new Phaser.TileSprite(_, -150, game.height, game.width + 150, 200, "stall", theme.b1);
 		panggung.grass1.anchor.set(0,1);
-		panggung.grass2 = new Phaser.TileSprite(_, -100, game.height + 20, game.width + 100, 200, "stall", "grass2");
+		panggung.grass2 = new Phaser.TileSprite(_, -100, game.height + 20, game.width + 100, 200, "stall", theme.b2);
 		panggung.grass2.anchor.set(0,1);
 
 		panggung.add(panggung.grass1);
@@ -536,28 +549,26 @@ var stateMain = function() {
 		go.x = panel.width / 2 - go.width / 2;
 		go.y = 30;
 
-		panel.create(100, 120, "coin_gold");
-		var nt = createNumberText(score.toString()); nt.x = 180; nt.y = 125;
+		panel.create(120, 130, "coin_gold");
+		var nt = createNumberText(score.toString()); nt.x = 200; nt.y = 135;
 		panel.add(nt);
 
-		panel.create(100, 200, "hud", "icon_duck").scale.set(1.6,1.6);
-		nt = createNumberText(duckPoin.toString()); nt.x = 180; nt.y = 200;
+		panel.create(100, 220, "hud", "icon_duck");
+		nt = createNumberText(duckPoin.toString(), "_small"); nt.x = 150; nt.y = 220;
 		panel.add(nt);
 
-		panel.create(100, 280, "hud", "icon_target").scale.set(1.6,1.6);
-		nt = createNumberText(targetPoin.toString()); nt.x = 180; nt.y = 280;
+		panel.create(260, 220, "hud", "icon_target");
+		nt = createNumberText(targetPoin.toString(), "_small"); nt.x = 310; nt.y = 220;
 		panel.add(nt);
 
-		var btHome	= panel.create(400, 370, "icon_home");
+		var btHome	= panel.create(110, 360, "bt_home");
 		btHome.anchor.set(0.5,0.5);
-		btHome.rotation = -0.1;
 		zoomEffect(btHome, {x: 1, y: 1});
 
-		var btReplay= panel.create(380, 270, "gamepad");
+		var btReplay= panel.create(330, 360, "bt_replay");
 		btReplay.anchor.set(0.5,0.5);
-		btReplay.rotation = -0.1;
-		btReplay.scale.set(1.3,1.3);
-		zoomEffect(btReplay, {x: 1.3, y: 1.3});
+		btReplay.scale.set(0.9,0.9);
+		zoomEffect(btReplay, {x: 0.9, y: 0.9});
 		btReplay.events.onInputUp.add(onReplay);
 
 		function onReplay() {
@@ -590,8 +601,8 @@ var stateMain = function() {
 		_.load.image("coin_gold", "assets/coin_gold.png");
 		_.load.image("fullscreen-icon", "assets/fullscreen-icon.png");
 		_.load.image("panel", "assets/panel.png");
-		_.load.image("gamepad", "assets/gamepad.png");
-		_.load.image("icon_home", "assets/icon_home.png");
+		_.load.image("bt_replay", "assets/replay.png");
+		_.load.image("bt_home", "assets/home.png");
 		_.load.image("clickscroll", "assets/clickscroll.png");
 
 		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
@@ -614,7 +625,6 @@ var stateMain = function() {
 		manageBullets();
 
 		showCountDown();
-		//showGameOver();
 	}
 	this.update = function() {
 		if ((game.input.y < stall.dashboard.y) && (game.input.y > 60)) {

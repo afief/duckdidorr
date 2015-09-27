@@ -8,10 +8,12 @@ var stateMain = function() {
 	var duckPoin = 0;
 	var targetPoin = 0;
 	var reloadScrollCount = 3;
-	var totalBullets = 200;
+	var totalBullets = 100;
+	var isGameOver = false;
+	var startShowSpeed = Phaser.Timer.SECOND * 3;
 
-	var ducks = ["duck_back", "duck_brown", "duck_outline_back", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"];
-	var targetBoards = ["target_back", "target_back_outline", "target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"];
+	var ducks = ["duck_brown", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"]; //"duck_outline_back" "duck_back", 
+	var targetBoards = ["target_colored", "target_colored_outline", "target_red1", "target_red1_outline", "target_red2", "target_red2_outline", "target_red3", "target_red3_outline", "target_white", "target_white_outline"]; //"target_back", "target_back_outline", 
 	var sticks = ["stick_metal", "stick_metal_outline", "stick_wood", "stick_wood_outline"];
 
 	var panggung;
@@ -21,8 +23,44 @@ var stateMain = function() {
 	var scoreHUD;
 	var rifle;
 	var bullets;
+	var timer;
 	
 	var sounds = {};
+
+	function reset() {
+		score = 0;
+		totalBullets = 100;
+		duckPoin = 0;
+		targetPoin = 0;
+		startShowSpeed = Phaser.Timer.SECOND * 3;
+		isGameOver = false;
+
+		if (timer) {
+			timer.delay = startShowSpeed;
+			timer.timer.resume();
+		}
+
+		if (bullets) {
+			bullets.reload(); // full bullets
+			bullets.reload();
+			bullets.reload();
+			bullets.reload();
+			bullets.reload();
+		}
+		if (scoreHUD) {
+			scoreHUD.score.changeText("0");
+			scoreHUD.duckPoin.changeText("0");
+			scoreHUD.targetPoin.changeText("0");
+		}
+
+		if (stall.bggroup) {
+			var i = stall.bggroup.length-1;
+			while (i > 0) {
+				stall.bggroup.getChildAt(i).destroy();
+				i--;
+			}
+		}
+	}
 
 	function createGround() {
 		/* background */
@@ -174,10 +212,9 @@ var stateMain = function() {
 		}
 	}
 
-	function createNumberText(str, endStr) {
+	function createNumberText(str, endStr, alignRight) {
 		endStr = endStr || "";
 		var group = _.add.group();
-
 		insertText(str);
 		function insertText(str) {
 			var offsetX = 0;
@@ -187,6 +224,12 @@ var stateMain = function() {
 				} else {
 					group.create(offsetX, 0, "hud", getFrameName(str[i], endStr));
 					offsetX += group.getChildAt(group.children.length-1).width;
+				}
+			}
+			if (alignRight) {
+				var l = group.width;
+				for (i=0; i < group.length; i++) {
+					group.getChildAt(i).x -= l;
 				}
 			}
 		}
@@ -218,7 +261,7 @@ var stateMain = function() {
 
 	function manageTargets() {
 
-		var timer = _.time.events.add(Phaser.Timer.SECOND * 3, repeatInsert, this);
+		timer = _.time.events.add(startShowSpeed, repeatInsert, this);
 		timer.loop = true;
 		function repeatInsert() {
 			var rand = Math.floor(Math.random() * 2);
@@ -374,18 +417,25 @@ var stateMain = function() {
 		bullets.type = "silver";
 		bullets.long = "short";
 
-		bullets.number = createNumberText(totalBullets.toString(), "_small");
+		bullets.number = createNumberText(totalBullets.toString(), "_small", true);
 		bullets.add(bullets.number);
 
 		bullets.larik = [];
+		bullets.alerting = bullets.create(-70, -75, "clickscroll");
+		bullets.alerting.visible = false
+		bullets.alerting.tween = _.add.tween(bullets.alerting).to({alpha: 0}, 300, Phaser.Easing.Cubic.Out, true, 0, -1, true);
+		bullets.alerting.tween.pause();
 
-		var posX = bullets.number.width + 10;
+		var posX = 10;
 		for (var i = 0; i < bullets.num; i++) {
 			bullets.larik.push(bullets.create(posX, 0, "hud", "icon_bullet_" + bullets.type + "_" + bullets.long));
 			posX += 25;
 		}
 
 		bullets.shot = function() {
+			if (!isGameOver)
+				_.time.events.add(1000, cekGameOver, this);
+
 			/* if target on top of dashboard */
 			if ((bullets.num > 0) && (game.input.y < stall.dashboard.y) && (game.input.y > 60)) {
 				bullets.larik[bullets.num-1].frameName = "icon_bullet_empty_" + bullets.long;
@@ -401,6 +451,11 @@ var stateMain = function() {
 				bullets.larik[bullets.num-1].frameName = "icon_bullet_" + bullets.type + "_" + bullets.long;
 				sounds.reload.play();
 
+				if (bullets.alerting.visible) {
+					bullets.alerting.visible = false;
+					bullets.alerting.tween.pause();
+				}
+
 				/* decreate total bullets */
 				if (totalBullets > 0) {
 					totalBullets--;
@@ -408,17 +463,24 @@ var stateMain = function() {
 				}
 			}
 		}
-
+		function cekGameOver() {
+			if ((bullets.num <= 0) && (totalBullets <= 0)) {
+				showGameOver();
+			} else if (bullets.num <= 0) {
+				bullets.alerting.visible = true;
+				bullets.alerting.tween.resume();
+			}
+		}
 		function setPosition() {
-			bullets.x = game.width - bullets.width - 10;
-			bullets.y = game.height - bullets.height - 10;
+			bullets.x = game.width - 150;
+			bullets.y = game.height - 50;
 		}
 		setPosition();
 
 		/* Hit Area to Click Reload */
 		bullets.hitArea = new Phaser.Graphics(_);
 		bullets.hitArea.beginFill(0x000000,0);
-		bullets.hitArea.drawRect(-20,-20,bullets.width + 40, bullets.height + 40);
+		bullets.hitArea.drawRect(-90, -20, bullets.width + 40, bullets.height + 40);
 		bullets.hitArea.endFill();
 		bullets.add(bullets.hitArea);
 
@@ -456,6 +518,68 @@ var stateMain = function() {
 		loopCountDown();
 	}
 
+	function showGameOver() {
+		if (isGameOver) 
+			return;
+		isGameOver = true;
+
+		if (timer)
+			timer.timer.pause();
+
+		var panel = _.add.group();
+		var bg = panel.create(0,0,"panel");
+
+		panel.x = game.width / 2 - panel.width / 2;
+		panel.y = game.height / 2 - panel.height / 2;
+
+		var go = panel.create(30,0,"hud", "text_gameover");
+		go.x = panel.width / 2 - go.width / 2;
+		go.y = 30;
+
+		panel.create(100, 120, "coin_gold");
+		var nt = createNumberText(score.toString()); nt.x = 180; nt.y = 125;
+		panel.add(nt);
+
+		panel.create(100, 200, "hud", "icon_duck").scale.set(1.6,1.6);
+		nt = createNumberText(duckPoin.toString()); nt.x = 180; nt.y = 200;
+		panel.add(nt);
+
+		panel.create(100, 280, "hud", "icon_target").scale.set(1.6,1.6);
+		nt = createNumberText(targetPoin.toString()); nt.x = 180; nt.y = 280;
+		panel.add(nt);
+
+		var btHome	= panel.create(400, 370, "icon_home");
+		btHome.anchor.set(0.5,0.5);
+		btHome.rotation = -0.1;
+		zoomEffect(btHome, {x: 1, y: 1});
+
+		var btReplay= panel.create(380, 270, "gamepad");
+		btReplay.anchor.set(0.5,0.5);
+		btReplay.rotation = -0.1;
+		btReplay.scale.set(1.3,1.3);
+		zoomEffect(btReplay, {x: 1.3, y: 1.3});
+		btReplay.events.onInputUp.add(onReplay);
+
+		function onReplay() {
+			panel.destroy();
+			reset();
+		}
+
+		function zoomEffect(obj, from) {
+			obj.inputEnabled = true;
+
+			obj.events.onInputDown.add(onZoom);
+			obj.events.onInputOver.add(onZoom);
+			obj.events.onInputOut.add(onZoomOut);
+			function onZoom() {
+				_.add.tween(obj.scale).to({x: 1.5, y: 1.5}, 400, Phaser.Easing.Quadratic.Out, true);
+			}
+			function onZoomOut() {
+				_.add.tween(obj.scale).to({x: from.x, y: from.y}, 400, Phaser.Easing.Quadratic.In, true);
+			}
+		}
+	}
+
 	this.preload = function() {
 		lgi("MAIN PRELOAD");
 		_.load.atlasXML('stall', 'assets/spritesheet_stall.png', 'assets/spritesheet_stall.xml');
@@ -465,6 +589,10 @@ var stateMain = function() {
 		_.load.image("stand", "assets/stand.png");
 		_.load.image("coin_gold", "assets/coin_gold.png");
 		_.load.image("fullscreen-icon", "assets/fullscreen-icon.png");
+		_.load.image("panel", "assets/panel.png");
+		_.load.image("gamepad", "assets/gamepad.png");
+		_.load.image("icon_home", "assets/icon_home.png");
+		_.load.image("clickscroll", "assets/clickscroll.png");
 
 		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
 		_.load.audio("reload", "assets/sounds/reload.mp3");
@@ -486,6 +614,7 @@ var stateMain = function() {
 		manageBullets();
 
 		showCountDown();
+		//showGameOver();
 	}
 	this.update = function() {
 		if ((game.input.y < stall.dashboard.y) && (game.input.y > 60)) {

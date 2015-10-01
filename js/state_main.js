@@ -26,7 +26,7 @@ var stateMain = function() {
 	var timer;
 	
 	var sounds = {};
-	var themes = [{bg: "bg_wood", b1: "grass1", b2: "grass2"}, {bg: "bg_blue", b1: "water1", b2: "water2"}];
+	var themes = [{bg: "bg_wood", b1: "grass1", b2: "grass2", crosshair: "crosshair_blue_large"}, {bg: "bg_blue", b1: "water1", b2: "water2", crosshair: "crosshair_red_large"}];
 	var themeIndex = Math.floor(Math.random() * themes.length);
 	var theme = themes[themeIndex];
 
@@ -109,7 +109,7 @@ var stateMain = function() {
 		_.add.tween(panggung.grass2).to({ x: 0 }, 2500, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 
 		/* create crosshair */
-		crossHair = _.add.sprite(0,0, "hud", "crosshair_blue_large");
+		crossHair = _.add.sprite(0,0, "hud", theme.crosshair);
 		crossHair.anchor.set(0.5,0.5);
 
 		/* create rifle */
@@ -297,8 +297,8 @@ var stateMain = function() {
 			var randomSticks = sticks[Math.floor(Math.random() * sticks.length)];
 
 			var target 		= createTarget( randomDuck, randomSticks );
-			var yAxis		= 210 + (Math.random() * 90);
-			var yJump		= yAxis + 50 + (Math.random() * 50);
+			var yAxis		= 250 + (Math.random() * 50);
+			var yJump		= yAxis + 20 + (Math.random() * 30);
 			var speed 		= 5000 + (Math.random() * 5000);
 			var speedUpDown	= 1000 + (Math.random() * 3000);			
 
@@ -607,7 +607,7 @@ var stateMain = function() {
 	function showTirai() {
 		isGameOver = true;
 
-		var tirai = _.add.tileSprite(-10,0,game.width + 10, game.height, "tirai");
+		var tirai = _.add.tileSprite(-10,0,game.width + 20, game.height, "tirai");
 		var judul = _.add.sprite(game.width / 2, game.height / 2, "judul");
 		var btPlay = _.add.sprite(game.width / 2, game.height / 2 + 150, "play");
 
@@ -637,7 +637,7 @@ var stateMain = function() {
 			showCountDown();
 
 			tirai.tw1 = _.add.tween(tirai).to({y: -800}, 8000, Phaser.Easing.Linear.None, true).onComplete.add(tiraiPlay);
-			tirai.tw2 = _.add.tween(tirai).to({x: 0}, 500, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
+			tirai.tw2 = _.add.tween(tirai).to({x: 10}, 250, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 		}
 		function tiraiPlay() {
 			tirai.destroy();
@@ -648,6 +648,14 @@ var stateMain = function() {
 
 	this.preload = function() {
 		lgi("MAIN PRELOAD");
+		/* Loader */
+		_.add.sprite(game.width/2,game.height/4 * 1.5,"logo").anchor.setTo(0.5, 0.5);
+		_.add.sprite(game.width/2,game.height/4 * 3,"loader-white").anchor.setTo(0.5, 0.5);
+		var loadingBar = _.add.sprite(game.width/2,game.height/4 * 3,"loader-black");
+		loadingBar.anchor.setTo(0.5, 0.5);
+		_.load.setPreloadSprite(loadingBar,0);
+
+
 		_.load.atlasXML('stall', 'assets/spritesheet_stall.png', 'assets/spritesheet_stall.xml');
 		_.load.atlasXML('objects', 'assets/spritesheet_objects.png', 'assets/spritesheet_objects.xml');
 		_.load.atlasXML('hud', 'assets/spritesheet_hud.png', 'assets/spritesheet_hud.xml');

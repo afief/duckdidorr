@@ -5,6 +5,8 @@ var stateBoot = function() {
 		game.load.image("logo", "assets/logo.png");
 		game.load.image("loader-white", "assets/loader_white.png");
 		game.load.image("loader-black", "assets/loader_black.png");
+
+		game.stage.disableVisibilityChange = true;
 	}
 
 	function create() {

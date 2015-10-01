@@ -5,3 +5,21 @@ body {
 canvas {
 	cursor: cell;
 }
+
+#game {
+	width: 800px;
+	height: 480px;
+	background-color: black;
+}
+#game div {
+	font-size: 2em;
+	color: white;
+	font-family: monospace;
+	text-align: center;
+	display: block;
+	padding-top: 200px;
+}
+#game span {
+	font-size: 0.5em;
+    display: block;
+}

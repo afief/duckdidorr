@@ -8,16 +8,15 @@
 	
 	<link rel="stylesheet" href="css/style.css">
 
-	
-	
-
 </head>
 <body>
 
 	<div id="game">
 	</div>
 
-	<script src="build.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+		function sc(e,n,a,d){var t,s=e.getElementsByTagName(n)[0];e.getElementById(a)||(t=e.createElement(n),t.id=a,t.src=d,s.parentNode.insertBefore(t,s))}function onPhaserLoaded(){document.getElementById("game").innerHTML="",window.removeEventListener("phaserloaded",onPhaserLoaded),sc(document,"script","tappy_plane","build/duckdidor.min.js")}document.getElementById("game").innerHTML="<div><span>Please Wait</span>Load Engine</div>",sc(document,"script","phaser_engine","js/phaser.min.js"),window.addEventListener("phaserloaded",onPhaserLoaded);
+	</script>
 	
 </body>
 </html>

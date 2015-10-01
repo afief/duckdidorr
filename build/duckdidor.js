@@ -1,4 +1,23 @@
-"use strict";
+(function() {var lg 		= console.log.bind(console);
+var lgi 	= console.info.bind(console);
+var lgw 	= console.warn.bind(console);
+var lge 	= console.error.bind(console);
+
+function pointerDistance(p1, p2) {
+	function sqr(n) {
+		return n * n;
+	}
+	var res = Math.sqrt(sqr(p2.x - p1.x) + sqr(p2.y - p1.y));
+	//lgi(p1.x, p1.y, p2.x, p2.y, res);
+	return res;
+}
+
+function preventDefault(e) {
+	e = e || window.event;
+	if (e.preventDefault)
+		e.preventDefault();
+	e.returnValue = false;  
+};"use strict";
 
 var tw;
 var stateMain = function() {
@@ -498,7 +517,7 @@ var stateMain = function() {
 		/* Hit Area to Click Reload */
 		bullets.hitArea = new Phaser.Graphics(_);
 		bullets.hitArea.beginFill(0x000000,0);
-		bullets.hitArea.drawRect(-90, -80, bullets.width + 40, bullets.height + 120);
+		bullets.hitArea.drawRect(-90, -90, bullets.width + 40, bullets.height + 130);
 		bullets.hitArea.endFill();
 		bullets.add(bullets.hitArea);
 
@@ -696,4 +715,41 @@ var stateMain = function() {
 	this.render = function() {
 
 	}
-}
+};var stateBoot = function() {
+
+	function preload() {
+		lgi("BOOT PRELOAD");
+		game.load.image("logo", "assets/logo.png");
+		game.load.image("loader-white", "assets/loader_white.png");
+		game.load.image("loader-black", "assets/loader_black.png");
+	}
+
+	function create() {
+		lgi("BOOT CREATE");
+		game.state.start("main");
+	}
+
+	function update() {
+		
+	}
+
+	function render() {
+		
+	}
+
+	return {
+		preload: preload,
+		create: create,
+		update: update,
+		render: render
+	}
+};var game = new Phaser.Game(800, 480, Phaser.AUTO, 'game');
+
+game.state.add("boot", new stateBoot());
+game.state.add("main", new stateMain());
+
+
+game.state.start("boot");
+
+document.getElementById("game").onwheel = preventDefault;
+document.getElementById("game").onmousewheel = preventDefault;})();

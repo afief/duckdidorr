@@ -9,7 +9,7 @@ var stateMain = function() {
 	var targetPoin = 0;
 	var reloadScrollCount = 3;
 	var totalBullets = 10;
-	var isGameOver = false;
+	var isGameOver = true;
 	var startShowSpeed = Phaser.Timer.SECOND * 3;
 
 	var ducks = ["duck_brown", "duck_outline_brown", "duck_outline_target_brown", "duck_outline_target_white", "duck_outline_target_yellow", "duck_outline_white", "duck_outline_yellow", "duck_target_brown", "duck_target_white", "duck_target_yellow", "duck_white", "duck_yellow"]; //"duck_outline_back" "duck_back", 
@@ -446,15 +446,17 @@ var stateMain = function() {
 		}
 
 		bullets.shot = function() {
-			if (!isGameOver)
+			if (!isGameOver) {
 				_.time.events.add(1000, cekGameOver, this);
 
-			/* if target on top of dashboard */
-			if ((bullets.num > 0) && (game.input.y < stall.dashboard.y) && (game.input.y > 60)) {
-				bullets.larik[bullets.num-1].frameName = "icon_bullet_empty_" + bullets.long;
-				bullets.num--;
+				/* if target on top of dashboard */
+				if ((bullets.num > 0) && (game.input.y < stall.dashboard.y) && (game.input.y > 60)) {
+					bullets.larik[bullets.num-1].frameName = "icon_bullet_empty_" + bullets.long;
+					bullets.num--;
 
-				return true;
+					return true;
+				}
+
 			}
 			return false;
 		}
@@ -525,6 +527,7 @@ var stateMain = function() {
 				_.add.tween(countDown.getAt(0).scale).to({x: 2, y: 2}, 500, Phaser.Easing.Quadratic.Out, true, 0, 0, true).onComplete.add(loopCountDown);
 			} else {
 				/* start show targets */
+				isGameOver = false;
 				manageTargets();
 			}
 		}
@@ -591,6 +594,46 @@ var stateMain = function() {
 		}
 	}
 
+	function showTirai() {
+		var tirai = _.add.tileSprite(-10,0,game.width + 10, game.height, "tirai");
+		var judul = _.add.sprite(game.width / 2, game.height / 2, "judul");
+		var btPlay = _.add.sprite(game.width / 2, game.height / 2 + 150, "play");
+
+		tirai.addChild(judul);
+
+		judul.anchor.set(0.5, 1);
+		btPlay.anchor.set(0.5, 0.5);
+	
+		btPlay.inputEnabled = true;
+		btPlay.events.onInputOver.add(playOver);
+		btPlay.events.onInputOut.add(playOut);
+		btPlay.events.onInputUp.add(playUp);	
+		function playOver() {
+			btPlay.scale.set(1.2,1.2);
+			btPlay.tint = 0xffaa11;
+		}
+		function playOut() {
+			btPlay.scale.set(1,1);
+			btPlay.tint = 0xffffff;
+		}
+		function playUp() {
+			btPlay.events.onInputOver.remove(playOver);
+			btPlay.events.onInputOut.remove(playOut);
+			btPlay.events.onInputUp.remove(playUp);
+			btPlay.destroy();
+
+			showCountDown();
+
+			tirai.tw1 = _.add.tween(tirai).to({y: -800}, 8000, Phaser.Easing.Linear.None, true).onComplete.add(tiraiPlay);
+			tirai.tw2 = _.add.tween(tirai).to({x: 0}, 500, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
+		}
+		function tiraiPlay() {
+			tirai.destroy();
+			judul.destroy();
+		}
+	}
+
+
 	this.preload = function() {
 		lgi("MAIN PRELOAD");
 		_.load.atlasXML('stall', 'assets/spritesheet_stall.png', 'assets/spritesheet_stall.xml');
@@ -602,8 +645,11 @@ var stateMain = function() {
 		_.load.image("fullscreen-icon", "assets/fullscreen-icon.png");
 		_.load.image("panel", "assets/panel.png");
 		_.load.image("bt_replay", "assets/replay.png");
+		_.load.image("play", "assets/play.png");
 		_.load.image("bt_home", "assets/home.png");
 		_.load.image("clickscroll", "assets/clickscroll.png");
+		_.load.image("tirai", "assets/tirai.png");
+		_.load.image("judul", "assets/judul.png");
 
 		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
 		_.load.audio("reload", "assets/sounds/reload.mp3");
@@ -624,7 +670,7 @@ var stateMain = function() {
 
 		manageBullets();
 
-		showCountDown();
+		showTirai();
 	}
 	this.update = function() {
 		if ((game.input.y < stall.dashboard.y) && (game.input.y > 60)) {

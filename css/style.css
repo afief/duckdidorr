@@ -1,15 +1,24 @@
 body {
 	margin: 0px;
 	padding: 0px;
+	background-color: black;
+	position: relative;
 }
-canvas {
+canvas, #game {
 	cursor: cell;
 }
 
 #game {
 	width: 800px;
 	height: 480px;
-	background-color: black;
+
+	position: fixed;
+	left: 50%;
+	margin-left: -410px;
+	top: 50%;
+	margin-top: -250px;
+	border: solid 10px #272727;
+	border-radius: 10px;
 }
 #game div {
 	font-size: 2em;
@@ -21,5 +30,5 @@ canvas {
 }
 #game span {
 	font-size: 0.5em;
-    display: block;
+	display: block;
 }

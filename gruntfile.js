@@ -19,14 +19,25 @@ module.exports = function(grunt) {
   			src: 'build/<%= pkg.name %>.js',
   			dest: 'build/<%= pkg.name %>.min.js'
   		},
-  	}
+  	},
+    compress: {
+      main: {
+        options: {
+          archive: 'publish/<%= pkg.name %>.publish.<%= grunt.template.today("yyyy-mm-dd.hh-MM-ss") %>.zip'
+        },
+        files: [
+          {src: ['assets/**/*', 'index.html', 'js/phaser.min.js', 'css/style.css', 'build/<%= pkg.name %>.min.js'], dest: '/'}
+        ]
+      }
+    }
   });
 
   // Load the plugin that provides the "uglify" task
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-compress');
 
   // Default task(s)
-  grunt.registerTask('default', ['concat', 'uglify']);
+  grunt.registerTask('default', ['concat', 'uglify', 'compress']);
 
 };

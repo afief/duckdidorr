@@ -43,6 +43,7 @@ var stateMain = function() {
 	var rifle;
 	var bullets;
 	var timer;
+	var fullscreenIcon, soundIcon, questionIcon, joystickIcon, tutorialPanel, creditPanel;
 	
 	var sounds = {};
 	var themes = [{bg: "bg_wood", b1: "grass1", b2: "grass2", crosshair: "crosshair_blue_large"}, {bg: "bg_blue", b1: "water1", b2: "water2", crosshair: "crosshair_red_large"}];
@@ -56,6 +57,7 @@ var stateMain = function() {
 		targetPoin = 0;
 		startShowSpeed = Phaser.Timer.SECOND * 3;
 		isGameOver = false;
+		fullscreenIcon = null;
 
 		if (timer) {
 			timer.delay = startShowSpeed;
@@ -161,7 +163,7 @@ var stateMain = function() {
 		scoreHUD.add(scoreHUD.targetPoin);		
 
 		/* fullscreen icon */
-		var fullscreenIcon = _.add.image(10, 10, "fullscreen-icon");
+		fullscreenIcon = _.add.image(10, 10, "fullscreen-icon");
 		fullscreenIcon.scale.set(0.9,0.9);
 
 		fullscreenIcon.inputEnabled = true;
@@ -173,6 +175,54 @@ var stateMain = function() {
 				game.scale.startFullScreen(false);
 			}
 		}, this);
+
+		/* sound icons */
+		soundIcon = _.add.sprite(80, game.height - 13, "sounds", "sound_on");
+		soundIcon.anchor.set(0, 1);
+		soundIcon.inputEnabled = true;
+		soundIcon.events.onInputUp.add(function() {
+			if (sounds.bgm.isPlaying) {
+				sounds.bgm.stop();
+				soundIcon.frameName = "sound_off";
+			} else {
+				sounds.bgm.loopFull(1);
+				soundIcon.frameName = "sound_on";
+			}
+		});
+
+		questionIcon = _.add.sprite(10, game.height - 10, "question");
+		questionIcon.anchor.set(0, 1);
+		questionIcon.inputEnabled = true;
+		questionIcon.events.onInputUp.add(function() {
+			if (creditPanel) {
+				tutupTutorial();
+			} else {
+				creditPanel =_.add.image(50, 20, "credits");
+				creditPanel.inputEnabled = true;
+				creditPanel.events.onInputUp.add(tutupTutorial);
+			}
+			function tutupTutorial() {
+				creditPanel.destroy();
+				creditPanel = null;
+			}
+		});
+
+		joystickIcon = _.add.sprite(140, game.height - 10, "joystick");
+		joystickIcon.anchor.set(0, 1);
+		joystickIcon.inputEnabled = true;
+		joystickIcon.events.onInputUp.add(function() {
+			if (tutorialPanel) {
+				tutupTutorial();
+			} else {
+				tutorialPanel =_.add.image(50, 20, "tutorial");
+				tutorialPanel.inputEnabled = true;
+				tutorialPanel.events.onInputUp.add(tutupTutorial);
+			}
+			function tutupTutorial() {
+				tutorialPanel.destroy();
+				tutorialPanel = null;
+			}
+		});
 	}
 
 	function createTarget(_target, _stick) {
@@ -626,7 +676,7 @@ var stateMain = function() {
 	function showTirai() {
 		isGameOver = true;
 
-		var tirai = _.add.tileSprite(-10,0,game.width + 20, game.height, "tirai");
+		var tirai = _.add.tileSprite(-20, 0,game.width + 20, game.height, "tirai");
 		var judul = _.add.sprite(game.width / 2, game.height / 2, "judul");
 		var btPlay = _.add.sprite(game.width / 2, game.height / 2 + 150, "play");
 
@@ -656,12 +706,17 @@ var stateMain = function() {
 			showCountDown();
 
 			tirai.tw1 = _.add.tween(tirai).to({y: -800}, 8000, Phaser.Easing.Linear.None, true).onComplete.add(tiraiPlay);
-			tirai.tw2 = _.add.tween(tirai).to({x: 10}, 250, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
+			tirai.tw2 = _.add.tween(tirai).to({x: 0}, 250, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 		}
 		function tiraiPlay() {
 			tirai.destroy();
 			judul.destroy();
 		}
+
+		fullscreenIcon.bringToTop();
+		soundIcon.bringToTop();
+		questionIcon.bringToTop();
+		joystickIcon.bringToTop();
 	}
 
 
@@ -689,6 +744,12 @@ var stateMain = function() {
 		_.load.image("clickscroll", "assets/clickscroll.png");
 		_.load.image("tirai", "assets/tirai.png");
 		_.load.image("judul", "assets/judul.png");
+		_.load.image("tutorial", "assets/tutorial.png");
+		_.load.image("credits", "assets/credits.png");
+
+		_.load.image("question", "assets/question.png");
+		_.load.image("joystick", "assets/joystick.png");
+		_.load.atlas('sounds', 'assets/sounds.png', 'assets/sounds.json', Phaser.Loader.TEXTURE_ATLAS_JSON_HASH);
 
 		_.load.audio("shot", "assets/sounds/barreta_m9-Dion_Stapper-1010051237.mp3");
 		_.load.audio("reload", "assets/sounds/reload.mp3");

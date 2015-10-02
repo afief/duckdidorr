@@ -1,0 +1,20 @@
+{
+	"frames": {
+		"sound_off": {
+			"frame": {"x":39, "y":0, "w":26, "h":39},
+			"spriteSourceSize": {"x":6,"y":7,"w":50,"h":50},
+			"sourceSize": {"w":50,"h":50}
+		},
+		"sound_on": {
+			"frame": {"x":0, "y":0, "w":38, "h":39},
+			"spriteSourceSize": {"x":6,"y":7,"w":50,"h":50},
+			"sourceSize": {"w":50,"h":50}
+		}
+
+	},
+	"meta": {
+		"image": "sounds.png",
+		"size": {"w": 66, "h": 40},
+		"scale": "1"
+	}
+}
